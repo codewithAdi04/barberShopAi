@@ -1,0 +1,221 @@
+{
+  "name": "BarberShop ai asistant",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hi there! 👋\nMy name is Aisha. How can I assist you today?",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        -16
+      ],
+      "id": "d2321e5f-e175-4db4-a72a-c34d4a475aea",
+      "name": "When chat message received",
+      "webhookId": "ab914bb3-3985-43f3-a5fe-2a319601a626"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are helpful Barber Shop AI asssistant. You have to give all the members  based on the services, barbers, and offers below:\n\n {{ $json.Services }}\n\n\nCustomer says:\"{{ $('When chat message received').item.json.chatInput }}\"",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are a friendly and helpful AI assistant for a Barber Shop. Your goal is to:\n\n1. Answer customer queries about:\n   - Available services\n   - Pricing\n   - Offers\n   - Available barbers (if given)\n   - Opening hours\n\n2. Help customers *book appointments* by collecting:\n   - Customer Name\n   - Date\n   - Time\n   - Service they want\n\n3. Validate inputs:\n   - Ensure the *date is in future*\n   - Ensure *time is within working hours* (e.g., 10:00 AM to 8:00 PM)\n   - If any detail is missing, ask politely\n\n4. Confirm the appointment summary before sending for storage.\n\nShop Data (Services and Pricing):\n{{ $json.Services }}\n\nAlways be polite, clear, and concise. If customers ask general questions, answer them naturally. If booking is required, guide them step-by-step."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        544,
+        -16
+      ],
+      "id": "8b60515e-f4e9-4e03-b2d3-39c9b276dfae",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5c1a54b0-d5a0-4343-8c80-6ca939975737",
+              "name": "Services",
+              "value": "Services:\n* Haircut - ₹200\n* Beard Trim - ₹100\n* Shave - ₹80\n* Hair Color - ₹400\n\nBarbers:\n* Ravi\n* Sameer\n* John\n\nOffers:\n🎁 Get 20% off on Haircut + Beard combo until Sunday!",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        -16
+      ],
+      "id": "bfe23b4e-54c2-4a97-9ae9-ef346b55d375",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "his tool is used to validate and format user-provided date and time inputs for booking barber appointments. It checks if the selected time falls within the barber shop’s working hours (e.g., 10 AM to 8 PM), and helps calculate available time slots.",
+        "operation": "extractDate",
+        "date": "={{ $now }}",
+        "part": "hour",
+        "options": {
+          "includeInputFields": false
+        }
+      },
+      "type": "n8n-nodes-base.dateTimeTool",
+      "typeVersion": 2,
+      "position": [
+        704,
+        208
+      ],
+      "id": "da718da4-1cb9-4086-ba2e-08f53394a6fd",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTimeTool",
+      "typeVersion": 2,
+      "position": [
+        832,
+        208
+      ],
+      "id": "dddd36b1-84cd-4ef2-8e50-29c9f3e12749",
+      "name": "Date & Time1"
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-chat-v3-0324:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        400,
+        192
+      ],
+      "id": "442ae9bc-0c68-46af-ba0f-14a2cea82453",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "g581uez2zpps2bO0",
+          "name": "OpenRouter account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "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"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        192
+      ],
+      "id": "510e8b94-fa4d-4f63-96f1-9c8365cc20d9",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "15f3eab7-b478-4c71-a8a8-027a3d961f40",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "620aed0d0325db477d767ef69e54c6f1f1fca5444faec22459cb2de412dd04a2"
+  },
+  "id": "uv8KVmfoz1XpKZcK",
+  "tags": [
+    {
+      "createdAt": "2025-07-24T13:40:58.692Z",
+      "updatedAt": "2025-07-24T13:40:58.692Z",
+      "id": "jCJWRugmxCx9BK1x",
+      "name": "Research agent"
+    }
+  ]
+}
